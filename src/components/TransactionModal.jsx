@@ -111,6 +111,8 @@ const TransactionModal = ({ isOpen, onClose }) => {
           <div className="form-group date-picker-wrapper">
             <label className="form-label">Ngày giao dịch</label>
             <DatePicker
+              showIcon
+              toggleCalendarOnIconClick
               selected={date}
               onChange={(d) => setDate(d)}
               dateFormat="dd/MM/yyyy"
