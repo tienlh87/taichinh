@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { X } from 'lucide-react';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const INCOME_CATEGORIES = ['Lương', 'Thưởng', 'Kinh doanh', 'Khác'];
 const EXPENSE_CATEGORIES = ['Ăn uống', 'Mua sắm', 'Hóa đơn', 'Giải trí', 'Y tế', 'Giáo dục', 'Khác'];
@@ -11,7 +13,7 @@ const TransactionModal = ({ isOpen, onClose }) => {
   const [type, setType] = useState('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date());
   const [note, setNote] = useState('');
 
   if (!isOpen) return null;
@@ -25,7 +27,7 @@ const TransactionModal = ({ isOpen, onClose }) => {
       type,
       amount: rawAmount,
       category,
-      date: new Date(date).toISOString(),
+      date: date.toISOString(),
       note
     });
     
@@ -106,13 +108,13 @@ const TransactionModal = ({ isOpen, onClose }) => {
             </select>
           </div>
 
-          <div className="form-group">
+          <div className="form-group date-picker-wrapper">
             <label className="form-label">Ngày giao dịch</label>
-            <input
-              type="date"
-              className="form-control"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+            <DatePicker
+              selected={date}
+              onChange={(d) => setDate(d)}
+              dateFormat="dd/MM/yyyy"
+              className="form-control w-full"
               required
             />
           </div>
