@@ -1,33 +1,52 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 
 const FinanceContext = createContext();
 
-const initialTransactions = [
-  { id: '1', type: 'income', amount: 35000000, category: 'Lương', date: new Date().toISOString(), note: 'Lương tháng này' },
-  { id: '2', type: 'expense', amount: 5000000, category: 'Ăn uống', date: new Date(Date.now() - 86400000).toISOString(), note: 'Ăn nhà hàng' },
-  { id: '3', type: 'expense', amount: 1500000, category: 'Mua sắm', date: new Date(Date.now() - 86400000 * 2).toISOString(), note: 'Quần áo' },
-  { id: '4', type: 'expense', amount: 3000000, category: 'Hóa đơn', date: new Date(Date.now() - 86400000 * 3).toISOString(), note: 'Điện nước' },
-];
-
 export const FinanceProvider = ({ children }) => {
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('finance_transactions');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    return initialTransactions;
-  });
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem('finance_transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    // Lắng nghe dữ liệu real-time từ Firestore
+    const q = query(collection(db, 'transactions'), orderBy('date', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const txData = [];
+      snapshot.forEach((doc) => {
+        txData.push({ id: doc.id, ...doc.data() });
+      });
+      setTransactions(txData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Lỗi khi lấy dữ liệu từ Firebase: ", error);
+      setLoading(false);
+    });
 
-  const addTransaction = (transaction) => {
-    setTransactions(prev => [{ ...transaction, id: Date.now().toString() }, ...prev]);
+    // Hủy đăng ký lắng nghe khi component unmount
+    return () => unsubscribe();
+  }, []);
+
+  const addTransaction = async (transaction) => {
+    try {
+      await addDoc(collection(db, 'transactions'), {
+        ...transaction,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.error("Lỗi khi thêm giao dịch: ", e);
+      alert("Không thể thêm giao dịch. Vui lòng kiểm tra quyền truy cập Database (Rules).");
+    }
   };
 
-  const deleteTransaction = (id) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+  const deleteTransaction = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'transactions', id));
+    } catch (e) {
+      console.error("Lỗi khi xóa giao dịch: ", e);
+      alert("Không thể xóa giao dịch. Vui lòng kiểm tra quyền truy cập Database (Rules).");
+    }
   };
 
   const calculateTotal = (type) => {
@@ -47,7 +66,8 @@ export const FinanceProvider = ({ children }) => {
       deleteTransaction,
       totalIncome,
       totalExpense,
-      balance
+      balance,
+      loading
     }}>
       {children}
     </FinanceContext.Provider>
