@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const FinanceContext = createContext();
 
 export const FinanceProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([]);
+  const [budgets, setBudgets] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,8 +25,20 @@ export const FinanceProvider = ({ children }) => {
       setLoading(false);
     });
 
+    // Lắng nghe dữ liệu ngân sách
+    const unsubscribeBudgets = onSnapshot(collection(db, 'budgets'), (snapshot) => {
+      const budgetsData = {};
+      snapshot.forEach((doc) => {
+        budgetsData[doc.id] = doc.data().amount;
+      });
+      setBudgets(budgetsData);
+    });
+
     // Hủy đăng ký lắng nghe khi component unmount
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubscribeBudgets();
+    };
   }, []);
 
   const addTransaction = async (transaction) => {
@@ -49,6 +62,17 @@ export const FinanceProvider = ({ children }) => {
     }
   };
 
+  const setMonthlyBudget = async (monthKey, amount) => {
+    try {
+      await setDoc(doc(db, 'budgets', monthKey), {
+        amount: Number(amount)
+      });
+    } catch (e) {
+      console.error("Lỗi khi lưu ngân sách: ", e);
+      alert("Không thể lưu ngân sách. Vui lòng kiểm tra quyền truy cập Database.");
+    }
+  };
+
   const calculateTotal = (type) => {
     return transactions
       .filter(t => t.type === type)
@@ -67,6 +91,8 @@ export const FinanceProvider = ({ children }) => {
       totalIncome,
       totalExpense,
       balance,
+      budgets,
+      setMonthlyBudget,
       loading
     }}>
       {children}

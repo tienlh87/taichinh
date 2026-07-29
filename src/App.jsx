@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Reports from './pages/Reports';
+import Budgets from './pages/Budgets';
 import TransactionModal from './components/TransactionModal';
 import { Plus } from 'lucide-react';
 
@@ -30,6 +31,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/transactions" element={<Transactions />} />
+              <Route path="/budgets" element={<Budgets />} />
               <Route path="/reports" element={<Reports />} />
             </Routes>
           </main>

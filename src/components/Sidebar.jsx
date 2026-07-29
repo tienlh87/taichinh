@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ReceiptText, PieChart, Wallet } from 'lucide-react';
+import { LayoutDashboard, ReceiptText, PieChart, Wallet, Target } from 'lucide-react';
 
 const Sidebar = () => {
   return (
@@ -25,6 +25,14 @@ const Sidebar = () => {
         >
           <ReceiptText size={20} />
           <span>Giao dịch</span>
+        </NavLink>
+        
+        <NavLink 
+          to="/budgets" 
+          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+        >
+          <Target size={20} />
+          <span>Ngân sách</span>
         </NavLink>
         
         <NavLink 
