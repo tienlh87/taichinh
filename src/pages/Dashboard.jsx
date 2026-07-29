@@ -1,16 +1,25 @@
 import React from 'react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/format';
-import { TrendingUp, TrendingDown, Wallet, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
 const Dashboard = () => {
-  const { totalIncome, totalExpense, balance, transactions } = useFinance();
+  const { totalIncome, totalExpense, balance, transactions, budgets } = useFinance();
 
   // Get recent 5 transactions
   const recentTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const currentBudget = budgets[currentMonthKey] || 0;
+  
+  const currentMonthExpenses = transactions
+    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthKey))
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const isOverBudget = currentBudget > 0 && currentMonthExpenses > currentBudget;
 
   return (
     <div className="animate-pulse" style={{ animation: 'fadeIn 0.5s ease' }}>
@@ -20,6 +29,18 @@ const Dashboard = () => {
           <p className="text-muted">Xin chào, đây là tình hình tài chính của gia đình bạn.</p>
         </div>
       </div>
+
+      {isOverBudget && (
+        <div className="mb-6 p-4 rounded-lg flex items-center gap-4" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', color: 'var(--text-main)' }}>
+          <div className="p-2 rounded-full" style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>
+            <AlertTriangle size={24} />
+          </div>
+          <div>
+            <h4 className="font-bold text-danger mb-1">Cảnh báo Vượt Ngân Sách!</h4>
+            <p className="text-sm">Bạn đã chi tiêu <strong className="text-danger">{formatCurrency(currentMonthExpenses)}</strong> trong khi ngân sách tháng này chỉ có <strong>{formatCurrency(currentBudget)}</strong>. Hãy cân đối lại các khoản chi hoặc xem xét <Link to="/budgets" className="text-primary underline">điều chỉnh ngân sách</Link>!</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-6 mb-8">
         <div className="card flex flex-col justify-between" style={{ background: 'linear-gradient(135deg, var(--bg-card), rgba(99, 102, 241, 0.1))' }}>
